@@ -1,15 +1,8 @@
+try {
+
 node {
 
 def mavenHome = tool name: "maven3.8.6"
-
-properties([buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: ''))])
-
-echo "the Job name is: ${env.JOB_NAME}"
-echo "the Node name is: ${env.NODE_NAME}"
-echo "the build number is: ${env.BUILD_NUMBER}"
-echo "the workspace path is: ${env.WORKSPACE}"
-echo "the node label is: ${env.NODE_LABELS}"
-
 
 stage('Checkout_code'){
   git branch: 'development', credentialsId: '9297fbac-023e-4149-a033-eb803760ba6a', url:
@@ -24,7 +17,7 @@ sh "${mavenHome}/bin/mvn clean package"
 stage('SonarQubeReport'){
 sh "${mavenHome}/bin/mvn clean package sonar:sonar"
 }
-/*
+
 stage('UploadArtifact')
 {
 sh "${mavenHome}/bin/mvn deploy"
@@ -38,7 +31,38 @@ stage('DeployApplicationIntoTomcatServer')
 }
 
 }
-*/
 }
+catch(e){
+ currentBuild.result = 'Failed'
+ throw e
+ }
+ finally{
+ //success or failure send the notifications
+ slacknotifications(currentBuild.result)
+ }
 
+def slacknotifications(String buildStatus = 'STARTED') {
+  // build status of null means successful
+  buildStatus =  buildStatus ?: 'SUCCESSFUL'
 
+  // Default values
+  def colorName = 'RED'
+  def colorCode = '#FF0000'
+  def subject = "${buildStatus}: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'"
+  def summary = "${subject} (${env.BUILD_URL})"
+
+  // Override default values based on build status
+  if (buildStatus == 'STARTED') {
+    color = 'YELLOW'	
+    colorCode = '#FFFF00'
+  } else if (buildStatus == 'SUCCESSFUL') {
+    color = 'GREEN'
+    colorCode = '#00FF00'
+  } else {
+    color = 'RED'
+    colorCode = '#FF0000'
+  }
+
+  // Send notifications
+  slackSend (color: colorCode, message: summary)
+}
