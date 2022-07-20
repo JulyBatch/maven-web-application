@@ -32,7 +32,7 @@ stage('DeployApplicationIntoTomcatServer')
 
 }
 }
-catch(e){
+catch (e) {
  currentBuild.result = 'Failed'
  throw e
  }
