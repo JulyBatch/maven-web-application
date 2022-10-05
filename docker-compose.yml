@@ -1,7 +1,7 @@
 version: '3.1'
 services:
   springboot:
-    image: docregistry/maven-web-app:$(BUILD_NUMBER)
+    image: docregistry/maven-web-app:ImageTag
     restart: always
     ports:
     - 9090:8080
